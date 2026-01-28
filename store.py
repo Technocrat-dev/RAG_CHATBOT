@@ -279,3 +279,308 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import pymupdf4llm
+import chromadb
+import uuid
+import fitz  # PyMuPDF
+import ollama
+import io
+from PIL import Image
+from typing import List, Dict, Any
+from sentence_transformers import SentenceTransformer
+from langchain_text_splitters import MarkdownHeaderTextSplitter
+from langchain_ollama import ChatOllama
+
+# ==========================================
+# CONFIGURATION
+# ==========================================
+PDF_PATH = "sample.pdf"
+EMBEDDING_MODEL = "all-MiniLM-L6-v2"
+LLM_MODEL = "llama3"        # For text generation
+VISION_MODEL = "llava"      # For image captioning (Make sure to 'ollama pull llava')
+
+# ==========================================
+# 1. MULTI-MODAL INGESTION
+# ==========================================
+class DocumentProcessor:
+    def __init__(self, pdf_path):
+        self.pdf_path = pdf_path
+
+    def _extract_images_and_caption(self) -> str:
+        """
+        Scans PDF for images/charts, sends them to a Vision LLM, 
+        and returns a Markdown formatted list of descriptions.
+        """
+        print(f"👁️  Scanning {self.pdf_path} for visual data (Charts/Diagrams)...")
+        doc = fitz.open(self.pdf_path)
+        captions = []
+        
+        total_images = 0
+        for page_index, page in enumerate(doc):
+            image_list = page.get_images(full=True)
+            
+            for img_index, img in enumerate(image_list):
+                total_images += 1
+                xref = img[0]
+                base_image = doc.extract_image(xref)
+                image_bytes = base_image["image"]
+                
+                # Filter small icons/logos to save time
+                if len(image_bytes) < 5000: continue 
+
+                print(f"   • Processing Image {img_index+1} on Page {page_index+1}...")
+                
+                try:
+                    # Send image bytes directly to Ollama Vision Model
+                    response = ollama.chat(
+                        model=VISION_MODEL,
+                        messages=[{
+                            'role': 'user',
+                            'content': 'Analyze this image. If it is a chart or graph, detail the data values, percentages, and labels. If it is a diagram, explain the flow.',
+                            'images': [image_bytes]
+                        }]
+                    )
+                    description = response['message']['content']
+                    captions.append(f"### Figure on Page {page_index+1}\n**Visual Description:** {description}\n")
+                except Exception as e:
+                    print(f"   ⚠️ Failed to caption image: {e}")
+
+        print(f"✅ Processed {total_images} images. Generated {len(captions)} detailed captions.")
+        return "\n\n".join(captions)
+
+    def process(self) -> str:
+        # 1. Convert Text/Tables to Markdown (Preserves Structure)
+        print(f"📄 Converting PDF Layout to Markdown...")
+        md_text = pymupdf4llm.to_markdown(self.pdf_path)
+        
+        # 2. Generate Image Captions
+        visual_context = ""
+        
+        # 3. Merge: We append visual context at the end so it's retrievable
+        full_document = f"{md_text}\n\n# APPENDIX: VISUAL DATA & CHARTS\n{visual_context}"
+        return full_document
+
+# ==========================================
+# 2. STRUCTURED CHUNKING (Markdown)
+# ==========================================
+class MarkdownStructChunker:
+    """
+    Splits content based on Document Headers (#, ##) rather than character count.
+    This keeps tables and related sections intact.
+    """
+    def chunk(self, text: str) -> List[Dict[str, Any]]:
+        print("🧱 Chunking by Document Structure (Headers)...")
+        
+        # Define the hierarchy to split on
+        headers_to_split_on = [
+            ("#", "Header 1"),
+            ("##", "Header 2"),
+            ("###", "Header 3"),
+        ]
+        
+        splitter = MarkdownHeaderTextSplitter(
+            headers_to_split_on=headers_to_split_on,
+            strip_headers=False 
+        )
+        
+        docs = splitter.split_text(text)
+        
+        chunks = []
+        for doc in docs:
+            # Metadata tracking allows us to cite the section in the answer
+            header_path = " > ".join(doc.metadata.values())
+            
+            # We treat these semantic sections as "Parents"
+            chunks.append({
+                "text": f"CONTEXT SOURCE: {header_path}\n\n{doc.page_content}",
+                "metadata": {
+                    "type": "parent", 
+                    "headers": str(doc.metadata)
+                }
+            })
+            
+        print(f"   • Created {len(chunks)} logical parent chunks.")
+        return chunks
+
+# ==========================================
+# 3. PARENT-CHILD INDEXER
+# ==========================================
+class ParentChildIndexer:
+    def __init__(self, embedder):
+        self.embedder = embedder
+        self.parent_store = {} 
+        self.chroma_client = chromadb.Client()
+        
+        # Reset DB for fresh run
+        try: self.chroma_client.delete_collection("child_nodes")
+        except: pass
+        
+        self.collection = self.chroma_client.create_collection("child_nodes")
+
+    def split_into_children(self, text: str) -> List[str]:
+        """Sliding window for child chunks"""
+        words = text.split()
+        children = []
+        # Window size 100 words, step 50 words
+        for i in range(0, len(words), 50): 
+            chunk = " ".join(words[i : i + 100])
+            if len(chunk) > 20:
+                children.append(chunk)
+            if i + 100 >= len(words): break
+        return children
+
+    def add_parents(self, parent_chunks: List[Dict[str, Any]]):
+        print("👶 Generating Children & Indexing...")
+        
+        child_texts = []
+        child_metadatas = []
+        child_ids = []
+
+        for p_chunk in parent_chunks:
+            parent_id = str(uuid.uuid4())
+            parent_text = p_chunk["text"]
+            
+            # Store Parent in Memory
+            self.parent_store[parent_id] = parent_text
+
+            # Create Children
+            children = self.split_into_children(parent_text)
+
+            for i, child_text in enumerate(children):
+                child_texts.append(child_text)
+                child_metadatas.append({"parent_id": parent_id, "child_index": i})
+                child_ids.append(f"{parent_id}_{i}")
+
+        # Batch Add
+        if child_texts:
+            # Process in batches of 100 to avoid hitting API limits/Timeouts
+            batch_size = 100
+            for i in range(0, len(child_texts), batch_size):
+                batch_texts = child_texts[i:i+batch_size]
+                batch_metas = child_metadatas[i:i+batch_size]
+                batch_ids = child_ids[i:i+batch_size]
+                
+                embeddings = self.embedder.encode(batch_texts)
+                self.collection.add(
+                    documents=batch_texts,
+                    embeddings=embeddings.tolist(),
+                    metadatas=batch_metas,
+                    ids=batch_ids
+                )
+        print(f"✅ Indexed {len(child_texts)} child nodes pointing to {len(self.parent_store)} parent contexts.")
+
+    def retrieve(self, query: str, top_k=3):
+        query_vec = self.embedder.encode([query])
+        results = self.collection.query(
+            query_embeddings=query_vec.tolist(),
+            n_results=top_k * 3 # Fetch more children to ensure unique parents
+        )
+
+        retrieved_parents = {}
+        print("\n🔎 Retrieval Path:")
+        
+        for i, meta in enumerate(results["metadatas"][0]):
+            parent_id = meta["parent_id"]
+            if parent_id not in retrieved_parents:
+                # Preview the match
+                match_preview = results["documents"][0][i][:60].replace('\n', ' ')
+                print(f"   • Match: '...{match_preview}...' -> Parent ID: {parent_id[:8]}")
+                retrieved_parents[parent_id] = self.parent_store[parent_id]
+            
+            if len(retrieved_parents) >= top_k:
+                break
+        
+        return list(retrieved_parents.values())
+
+# ==========================================
+# 4. MAIN EXECUTION
+# ==========================================
+def main():
+    print("--- 🛠️  Advanced Technical RAG (Markdown + Vision) ---")
+    
+    # 1. Processing
+    processor = DocumentProcessor(PDF_PATH)
+    full_markdown = processor.process()
+    
+    # 2. Chunking
+    chunker = MarkdownStructChunker()
+    parent_chunks = chunker.chunk(full_markdown)
+
+    # 3. Indexing
+    embedder = SentenceTransformer(EMBEDDING_MODEL)
+    indexer = ParentChildIndexer(embedder)
+    indexer.add_parents(parent_chunks)
+
+    # 4. Chat Loop
+    llm = ChatOllama(model=LLM_MODEL, temperature=0)
+    print("\n✅ System Ready. Ask about tables, charts, or technical specs.\n")
+
+    while True:
+        query = input("🧑 You: ")
+        if query.lower() in ["exit", "quit"]: break
+
+        parents = indexer.retrieve(query, top_k=3)
+        
+        context_block = "\n---\n".join(parents)
+        
+        prompt = f"""
+        You are a technical analyst assistant. Answer the question based ONLY on the provided context.
+        The context includes Markdown tables and Image Descriptions.
+        
+        Rules:
+        1. If reading a table, look at column headers carefully.
+        2. If the answer is in a chart, refer to the "Visual Description".
+        3. If you don't know, say "Data not found in document".
+        
+        Context:
+        {context_block}
+        
+        Question: {query}
+        """
+        
+        print("\n🤖 AI Response:")
+        response_stream = llm.stream(prompt)
+        for chunk in response_stream:
+            print(chunk.content, end="", flush=True)
+        print("\n" + "-" * 60)
+
+if __name__ == "__main__":
+    main()

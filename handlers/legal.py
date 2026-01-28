@@ -60,11 +60,12 @@ class LegalHandler(BaseHandler):
             clause_match = self._detect_clause(line)
             
             if clause_match and current_chunk:
-                # Save the current chunk
+                # Save the current chunk with clause context
                 chunk_text = '\n'.join(current_chunk).strip()
                 if len(chunk_text) > 50:  # Minimum viable chunk
+                    clause_prefix = f"[Legal Clause: {current_metadata['clause']}]\n\n"
                     chunks.append({
-                        "text": chunk_text,
+                        "text": clause_prefix + chunk_text,
                         "metadata": current_metadata.copy()
                     })
                 
@@ -78,8 +79,9 @@ class LegalHandler(BaseHandler):
         if current_chunk:
             chunk_text = '\n'.join(current_chunk).strip()
             if len(chunk_text) > 50:
+                clause_prefix = f"[Legal Clause: {current_metadata['clause']}]\n\n"
                 chunks.append({
-                    "text": chunk_text,
+                    "text": clause_prefix + chunk_text,
                     "metadata": current_metadata.copy()
                 })
         

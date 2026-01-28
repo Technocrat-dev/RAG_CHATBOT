@@ -41,8 +41,22 @@ class TechnicalHandler(BaseHandler):
         # Convert to the standard dictionary format our DB expects
         clean_chunks = []
         for split in splits:
+            # Build header context string from metadata
+            header_parts = []
+            for key in ["Header 1", "Header 2", "Header 3"]:
+                if key in split.metadata:
+                    header_parts.append(split.metadata[key])
+            
+            header_context = " > ".join(header_parts)
+            
+            # Prepend headers to content for better LLM context
+            if header_context:
+                text_with_context = f"[Section: {header_context}]\n\n{split.page_content}"
+            else:
+                text_with_context = split.page_content
+            
             clean_chunks.append({
-                "text": split.page_content,
+                "text": text_with_context,
                 "metadata": split.metadata
             })
             

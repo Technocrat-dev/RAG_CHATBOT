@@ -90,7 +90,7 @@ class SelfCorrectingRAG:
             seen_texts = set()
             
             for q in queries:
-                contexts = self.db.retrieve(q, top_k=2)
+                contexts = self.db.retrieve(q, top_k=4)
                 for ctx in contexts:
                     # Deduplicate
                     ctx_hash = ctx[:100]

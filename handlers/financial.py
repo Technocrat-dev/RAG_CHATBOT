@@ -118,12 +118,20 @@ class FinancialHandler(BaseHandler):
             # Try to detect financial period
             period = self._detect_period(section)
             
+            # Build context prefix for LLM
+            context_parts = ["Financial"]
+            if period != "unknown":
+                context_parts.append(period)
+            if is_table:
+                context_parts.append("Table Data")
+            context_prefix = f"[{' - '.join(context_parts)}]\n\n"
+            
             # If section is too large, sub-chunk it
             if len(section) > 2000 and not is_table:
                 sub_chunks = self._size_chunk(section, max_size=1500)
                 for i, sub in enumerate(sub_chunks):
                     chunks.append({
-                        "text": sub,
+                        "text": context_prefix + sub,
                         "metadata": {
                             "type": "financial",
                             "is_table": False,
@@ -133,7 +141,7 @@ class FinancialHandler(BaseHandler):
                     })
             else:
                 chunks.append({
-                    "text": section,
+                    "text": context_prefix + section,
                     "metadata": {
                         "type": "financial",
                         "is_table": is_table,

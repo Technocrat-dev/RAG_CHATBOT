@@ -1,11 +1,13 @@
 import chromadb
 import uuid
 import os
+import json
 from typing import List, Dict, Any
 from sentence_transformers import SentenceTransformer
 
 # Simple config constants
 CHROMA_PATH = "chroma_db"
+PARENT_STORE_PATH = os.path.join(CHROMA_PATH, "parent_store.json")
 EMBED_MODEL = "all-MiniLM-L6-v2"
 
 class VectorDB:
@@ -16,8 +18,26 @@ class VectorDB:
         # Get or Create Collection
         self.collection = self.client.get_or_create_collection(name=collection_name)
         
-        # In-Memory Storage for Parents (For production, use Redis or SQL)
-        self.parent_store = {} 
+        # Persistent Storage for Parents - loads from disk on init
+        self.parent_store = self._load_parent_store()
+    
+    def _load_parent_store(self) -> dict:
+        """Load parent chunks from persistent JSON storage"""
+        if os.path.exists(PARENT_STORE_PATH):
+            try:
+                with open(PARENT_STORE_PATH, 'r', encoding='utf-8') as f:
+                    print(f"📂 Loaded {os.path.getsize(PARENT_STORE_PATH)//1024}KB of parent chunks from disk")
+                    return json.load(f)
+            except Exception as e:
+                print(f"⚠️ Failed to load parent store: {e}")
+        return {}
+    
+    def _save_parent_store(self):
+        """Persist parent chunks to JSON file"""
+        os.makedirs(CHROMA_PATH, exist_ok=True)
+        with open(PARENT_STORE_PATH, 'w', encoding='utf-8') as f:
+            json.dump(self.parent_store, f, ensure_ascii=False)
+        print(f"💾 Saved {len(self.parent_store)} parent chunks to disk") 
 
     def add_documents(self, parent_chunks: List[Dict[str, Any]]):
         """
@@ -55,6 +75,8 @@ class VectorDB:
                 metadatas=child_metadatas,
                 ids=child_ids
             )
+        # 5. Persist parent store to disk
+        self._save_parent_store()
         print("✅ Indexing Complete.")
 
     def retrieve(self, query: str, top_k: int = 3) -> List[str]:
@@ -78,13 +100,24 @@ class VectorDB:
         
         return retrieved_parents
 
-    def _split_into_children(self, text: str, window_size=100) -> List[str]:
-        """Simple sliding window splitter"""
+    def _split_into_children(self, text: str, window_size: int = 200) -> List[str]:
+        """
+        Sliding window splitter with improved sizing for better semantic embeddings.
+        
+        Args:
+            text: Parent chunk text to split
+            window_size: Number of words per child chunk (default 200)
+        """
         words = text.split()
-        if not words: return []
+        if not words: 
+            return []
+        
         children = []
-        for i in range(0, len(words), 25): # Step 25, Window 50
+        step_size = 50  # 75% overlap for continuity
+        
+        for i in range(0, len(words), step_size):
             chunk = " ".join(words[i : i + window_size])
-            if len(chunk) > 20: 
+            if len(chunk) > 50:  # Minimum viable chunk
                 children.append(chunk)
+        
         return children
