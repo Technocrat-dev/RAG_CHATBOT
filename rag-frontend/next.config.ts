@@ -4,9 +4,15 @@ const nextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: 'http://127.0.0.1:8000/:path*', // Proxy to your Python Backend
+        destination: 'http://127.0.0.1:8000/:path*',
       },
     ]
+  },
+  // Increase body parser limit for large file uploads
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '50mb',
+    },
   },
 };
 
