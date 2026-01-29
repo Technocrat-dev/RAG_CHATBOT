@@ -98,6 +98,9 @@ def upload_document(file: UploadFile = File(...), collection_id: str = "default"
         # Update collection document count (1 document, not chunk count)
         collections_manager.increment_doc_count(collection_id, 1)
         
+        # Track the uploaded file
+        collections_manager.add_file(collection_id, file.filename)
+        
         return {
             "status": "success", 
             "message": f"Indexed {len(chunks)} chunks from {file.filename}",
@@ -336,10 +339,60 @@ def add_message(session_id: str, data: MessageCreate):
 
 @app.delete("/sessions/{session_id}")
 def delete_session(session_id: str):
-    """Delete a chat session"""
-    if session_store.delete_session(session_id):
-        return {"status": "deleted", "session_id": session_id}
-    raise HTTPException(status_code=404, detail="Session not found")
+    """
+    Delete a chat session and all associated resources:
+    - Documents from vector database and BM25 index
+    - Uploaded files from data folder  
+    - Session from SQLite database
+    """
+    # Get session to find its collection_id
+    session = session_store.get_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    collection_id = session.collection_id
+    
+    # 1. Delete documents from vector DB and BM25 index
+    print(f"🗑️ Deleting documents for session {session_id} (collection: {collection_id})")
+    db_result = db.delete_by_collection(collection_id)
+    
+    # 2. Delete uploaded files from data folder
+    # Note: Multiple sessions might share the same collection, so we only delete
+    # files if this is the last session using this collection
+    remaining_sessions = [s for s in session_store.list_sessions(collection_id) if s.id != session_id]
+    
+    if not remaining_sessions:
+        # This was the last session using this collection - safe to delete files
+        tracked_files = collections_manager.get_files(collection_id)
+        files_deleted = 0
+        
+        for filename in tracked_files:
+            file_path = os.path.join(config.DATA_DIR, filename)
+            if os.path.exists(file_path):
+                try:
+                    os.remove(file_path)
+                    files_deleted += 1
+                    print(f"   Deleted file: {filename}")
+                except Exception as e:
+                    print(f"   Error deleting {filename}: {e}")
+        
+        print(f"✅ Deleted {files_deleted} files from data folder")
+        
+        # Also delete the collection from collections_manager
+        collections_manager.delete(collection_id)
+    else:
+        print(f"ℹ️  Other sessions still using collection {collection_id}, keeping files")
+    
+    # 3. Delete the session itself
+    session_store.delete_session(session_id)
+    
+    return {
+        "status": "deleted",
+        "session_id": session_id,
+        "collection_id": collection_id,
+        "documents_deleted": db_result.get("deleted_chunks", 0),
+        "shared_collection": len(remaining_sessions) > 0
+    }
 
 
 @app.get("/stats")

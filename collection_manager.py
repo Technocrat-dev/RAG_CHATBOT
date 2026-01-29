@@ -23,6 +23,11 @@ class Collection:
     description: str
     created_at: str
     document_count: int = 0
+    files: List[str] = None  # List of uploaded filenames
+    
+    def __post_init__(self):
+        if self.files is None:
+            self.files = []
     
     def to_dict(self) -> dict:
         return asdict(self)
@@ -108,6 +113,19 @@ class CollectionsManager:
         if collection_id in self.collections:
             self.collections[collection_id].document_count += count
             self._save()
+    
+    def add_file(self, collection_id: str, filename: str):
+        """Track an uploaded file for a collection"""
+        if collection_id in self.collections:
+            if filename not in self.collections[collection_id].files:
+                self.collections[collection_id].files.append(filename)
+                self._save()
+    
+    def get_files(self, collection_id: str) -> List[str]:
+        """Get list of files for a collection"""
+        if collection_id in self.collections:
+            return self.collections[collection_id].files
+        return []
     
     def get_or_create_default(self) -> Collection:
         """Get the default collection, creating it if needed"""
