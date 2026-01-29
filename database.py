@@ -232,11 +232,17 @@ class VectorDB:
         
         return children
     
-    def delete_all(self):
+    def delete_all(self, collection_id: str = None):
         """
-        Delete all documents from the database.
-        Clears ChromaDB collection, parent store, and BM25 index.
+        Delete documents from the database.
+        
+        Args:
+            collection_id: If provided, only delete documents from this collection.
+                          If None, deletes ALL documents (use with caution).
         """
+        if collection_id:
+            return self.delete_by_collection(collection_id)
+        
         print("🗑️ Deleting all documents...")
         
         # Clear ChromaDB
@@ -258,6 +264,76 @@ class VectorDB:
         
         print("✅ All documents deleted")
         return {"status": "deleted", "message": "All documents cleared"}
+    
+    def delete_by_collection(self, collection_id: str) -> dict:
+        """
+        Delete documents belonging to a specific collection only.
+        Preserves documents from other collections.
+        
+        Args:
+            collection_id: The collection ID to delete documents from.
+        
+        Returns:
+            dict with status and count of deleted documents.
+        """
+        print(f"🗑️ Deleting documents for collection: {collection_id}")
+        
+        deleted_count = 0
+        
+        # 1. Find and remove parent chunks for this collection
+        parent_ids_to_delete = []
+        for parent_id, parent_data in list(self.parent_store.items()):
+            if isinstance(parent_data, dict) and parent_data.get("collection_id") == collection_id:
+                parent_ids_to_delete.append(parent_id)
+            elif isinstance(parent_data, str):
+                # Old format without collection_id - skip (won't delete)
+                pass
+        
+        # 2. Delete from ChromaDB (child chunks)
+        try:
+            # Get all child IDs that belong to this collection
+            results = self.collection.get(
+                where={"collection_id": collection_id},
+                include=[]
+            )
+            if results and results["ids"]:
+                self.collection.delete(ids=results["ids"])
+                deleted_count = len(results["ids"])
+                print(f"✅ Deleted {deleted_count} child chunks from ChromaDB")
+        except Exception as e:
+            print(f"⚠️ ChromaDB delete error: {e}")
+        
+        # 3. Remove parent chunks
+        for parent_id in parent_ids_to_delete:
+            del self.parent_store[parent_id]
+        self._save_parent_store()
+        print(f"✅ Deleted {len(parent_ids_to_delete)} parent chunks")
+        
+        # 4. Rebuild BM25 index without deleted parents
+        new_corpus = []
+        new_parent_ids = []
+        for idx, parent_id in enumerate(self.bm25_parent_ids):
+            if parent_id not in parent_ids_to_delete:
+                new_corpus.append(self.bm25_corpus[idx])
+                new_parent_ids.append(parent_id)
+        
+        self.bm25_corpus = new_corpus
+        self.bm25_parent_ids = new_parent_ids
+        
+        if self.bm25_corpus:
+            self.bm25_index = BM25Okapi(self.bm25_corpus)
+        else:
+            self.bm25_index = None
+        
+        self._save_bm25_index()
+        print(f"✅ Rebuilt BM25 index with {len(self.bm25_corpus)} documents")
+        
+        return {
+            "status": "deleted",
+            "collection_id": collection_id,
+            "deleted_chunks": deleted_count,
+            "deleted_parents": len(parent_ids_to_delete)
+        }
     
     def get_stats(self) -> dict:
         """Get database statistics"""

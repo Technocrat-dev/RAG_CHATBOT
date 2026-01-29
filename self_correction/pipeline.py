@@ -204,12 +204,15 @@ QUESTION: {query}
 
 ANSWER:"""
 
-        response = ollama.chat(
-            model=self.llm_model,
-            messages=[{'role': 'user', 'content': prompt}]
-        )
-        
-        return response['message']['content']
+        try:
+            response = ollama.chat(
+                model=self.llm_model,
+                messages=[{'role': 'user', 'content': prompt}]
+            )
+            return response['message']['content']
+        except Exception as e:
+            print(f"⚠️ LLM connection error: {e}")
+            return f"I'm unable to generate an answer at this time. Error: {str(e)}"
     
     def _correct_hallucinations(
         self, 

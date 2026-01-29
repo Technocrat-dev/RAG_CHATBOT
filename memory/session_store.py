@@ -9,8 +9,10 @@ import os
 from typing import List, Optional, Dict, Any
 from dataclasses import dataclass, asdict
 from datetime import datetime
+import config
 
-DB_PATH = "chroma_db/sessions.db"
+DB_PATH = config.SESSION_DB_PATH
+
 
 
 @dataclass

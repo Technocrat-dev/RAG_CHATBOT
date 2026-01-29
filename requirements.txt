@@ -17,6 +17,9 @@ rank-bm25>=0.2.2
 
 # Document Processing
 pymupdf4llm>=0.0.5
+pdfplumber>=0.10.0
+PyMuPDF>=1.24.0
+langchain-text-splitters>=0.2.0
 
 # Data Models
 pydantic>=2.5.0

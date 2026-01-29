@@ -195,7 +195,7 @@ export default function Home() {
     }
   };
 
-  // Handle file upload - uploads to current collection
+  // Handle file upload - uploads to current collection via API route
   const handleUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -210,16 +210,16 @@ export default function Home() {
     formData.append("file", file);
 
     try {
-      // Upload directly to backend (bypass Next.js proxy for large file uploads)
-      const res = await fetch(`http://127.0.0.1:8000/upload?collection_id=${currentCollectionId}`, {
+      // Upload via Next.js API route (works in production and development)
+      const res = await fetch(`/api/upload?collection_id=${currentCollectionId}`, {
         method: "POST",
         body: formData,
       });
 
       // Check if response is OK before parsing JSON
       if (!res.ok) {
-        const errorData = await res.json().catch(() => ({ detail: "Upload failed" }));
-        throw new Error(errorData.detail || `Upload failed with status ${res.status}`);
+        const errorData = await res.json().catch(() => ({ error: "Upload failed" }));
+        throw new Error(errorData.error || errorData.detail || `Upload failed with status ${res.status}`);
       }
 
       const data = await res.json();

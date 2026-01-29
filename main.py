@@ -95,15 +95,16 @@ def upload_document(file: UploadFile = File(...), collection_id: str = "default"
         chunks = handler.chunk(raw_text)
         db.add_documents(chunks, collection_id=collection_id)
         
-        # Update collection document count
-        collections_manager.increment_doc_count(collection_id, len(chunks))
+        # Update collection document count (1 document, not chunk count)
+        collections_manager.increment_doc_count(collection_id, 1)
         
         return {
             "status": "success", 
             "message": f"Indexed {len(chunks)} chunks from {file.filename}",
             "document_type": doc_type,
             "handler": handler.get_type_name(),
-            "collection_id": collection_id
+            "collection_id": collection_id,
+            "chunks_created": len(chunks)
         }
     
     except Exception as e:
@@ -146,12 +147,16 @@ CONTEXT:
 QUESTION:
 {request.query}
 """
-        response = ollama.chat(model=request.model, messages=[
-            {'role': 'user', 'content': prompt},
-        ])
+        try:
+            response = ollama.chat(model=request.model, messages=[
+                {'role': 'user', 'content': prompt},
+            ])
+            answer = response['message']['content']
+        except Exception as e:
+            raise HTTPException(status_code=503, detail=f"LLM service unavailable: {str(e)}")
         
         return {
-            "response": response['message']['content'], 
+            "response": answer, 
             "context_used": context_docs,
             "confidence": None,
             "iterations": 1,
@@ -351,3 +356,35 @@ def get_stats():
 @app.get("/")
 def read_root():
     return {"status": "running", "system": "NeuralRAG v2.0 - Self-Correcting Multi-Modal RAG"}
+
+
+@app.get("/health")
+def health_check():
+    """
+    Health check endpoint that verifies all dependencies are available.
+    Returns status of Ollama connection, database, and system.
+    """
+    health = {
+        "status": "healthy",
+        "ollama": "unknown",
+        "database": "unknown",
+        "system": "NeuralRAG v2.0"
+    }
+    
+    # Check Ollama
+    try:
+        ollama.list()
+        health["ollama"] = "connected"
+    except Exception as e:
+        health["ollama"] = f"error: {str(e)}"
+        health["status"] = "degraded"
+    
+    # Check database
+    try:
+        db_stats = db.get_stats()
+        health["database"] = f"connected ({db_stats['parent_chunks']} docs)"
+    except Exception as e:
+        health["database"] = f"error: {str(e)}"
+        health["status"] = "degraded"
+    
+    return health
