@@ -23,12 +23,12 @@ A production-ready Retrieval-Augmented Generation (RAG) system with **self-corre
 
 - [Architecture](#-architecture)
 - [Features in Detail](#-features-in-detail)
+- [Screenshot](#-screenshot)
 - [Installation](#-installation)
 - [Usage](#-usage)
 - [API Reference](#-api-reference)
 - [Technical Details](#-technical-details)
 - [Development](#-development)
-- [Screenshot](#-screenshot)
 
 ---
 
@@ -277,6 +277,14 @@ User: "What's the revenue?"
 - **Sessions**: Chat threads linked to collections
 - **Persistence**: SQLite database stores all history
 - **Cleanup**: Deleting a session removes its documents (if no other sessions use them)
+
+---
+
+## 📸 Screenshot
+
+### Main Interface
+
+<img width="2047" height="1092" alt="image" src="https://github.com/user-attachments/assets/9abd9182-7cf7-40c6-9fe4-5ccda0e097d3" />
 
 ---
 
@@ -785,12 +793,6 @@ docker-compose up -d
 ```
 
 ---
-
-## 📸 Screenshot
-
-### Main Interface
-
-<img width="2047" height="1092" alt="image" src="https://github.com/user-attachments/assets/9abd9182-7cf7-40c6-9fe4-5ccda0e097d3" />
 
 ## 🤝 Contributing
 
