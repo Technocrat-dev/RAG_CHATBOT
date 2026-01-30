@@ -1,36 +1,43 @@
+# Virtual Environments
 venv/
 env/
+.venv/
 
-
+# Python cache
 __pycache__/
 *.py[cod]
+*$py.class
+*.pyo
 
-
+# Environment files (keep example)
 .env
 .env.local
+!.env.example
 
-
+# Database & Storage
 chroma_db/
-chroma_db_practice/
+*.db
 
-
-
+# Documents (uploaded files)
+data/*
+!data/.gitkeep
 *.pdf
 *.docx
 
-
-data/*
-!data/.gitkeep
-
+# Frontend
 rag-frontend/node_modules/
-
-
 rag-frontend/.next/
 rag-frontend/out/
 rag-frontend/build/
-
 rag-frontend/.env
 rag-frontend/.env*.local
 
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# System files
 .DS_Store
 Thumbs.db

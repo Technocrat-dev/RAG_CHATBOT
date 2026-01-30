@@ -1,0 +1,127 @@
+# NeuralRAG - Docker Compose Configuration
+# Complete stack: Frontend, Backend, Ollama LLM
+
+services:
+  # =========================================
+  # Backend - FastAPI RAG Server
+  # =========================================
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: neuralrag-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      # Persist vector database and uploads
+      - chroma_data:/app/chroma_db
+      - upload_data:/app/data
+    environment:
+      - RAG_DATA_DIR=/app/data
+      - RAG_CHROMA_DIR=/app/chroma_db
+      - RAG_LLM_MODEL=${RAG_LLM_MODEL:-llama3}
+      - RAG_VISION_MODEL=${RAG_VISION_MODEL:-llava}
+      - RAG_EMBED_MODEL=${RAG_EMBED_MODEL:-all-mpnet-base-v2}
+      # Point to Ollama container
+      - OLLAMA_HOST=http://ollama:11434
+    depends_on:
+      ollama:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - neuralrag-network
+    restart: unless-stopped
+
+  # =========================================
+  # Frontend - Next.js Web Interface
+  # =========================================
+  frontend:
+    build:
+      context: ./rag-frontend
+      dockerfile: Dockerfile
+    container_name: neuralrag-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      # Point to backend container
+      - RAG_BACKEND_URL=http://backend:8000
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - neuralrag-network
+    restart: unless-stopped
+
+  # =========================================
+  # Ollama - Local LLM Service
+  # =========================================
+  ollama:
+    image: ollama/ollama:latest
+    container_name: neuralrag-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_models:/root/.ollama
+    # Uncomment for GPU support (NVIDIA):
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:11434/api/tags" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - neuralrag-network
+    restart: unless-stopped
+
+  # =========================================
+  # Init - Pull required Ollama models
+  # =========================================
+  init:
+    image: curlimages/curl:latest
+    container_name: neuralrag-init
+    depends_on:
+      ollama:
+        condition: service_healthy
+    entrypoint: [ "/bin/sh", "-c" ]
+    command:
+      - |
+        echo "Pulling LLM models..."
+        curl -X POST http://ollama:11434/api/pull -d '{"name": "llama3"}'
+        echo ""
+        echo "Pulling Vision model..."
+        curl -X POST http://ollama:11434/api/pull -d '{"name": "llava"}'
+        echo ""
+        echo "Model setup complete!"
+    networks:
+      - neuralrag-network
+
+# =========================================
+# Volumes - Persistent data storage
+# =========================================
+volumes:
+  chroma_data:
+    name: neuralrag-chroma
+  upload_data:
+    name: neuralrag-uploads
+  ollama_models:
+    name: neuralrag-ollama-models
+
+# =========================================
+# Network - Internal communication
+# =========================================
+networks:
+  neuralrag-network:
+    name: neuralrag-network
+    driver: bridge

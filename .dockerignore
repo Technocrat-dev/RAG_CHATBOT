@@ -1,0 +1,51 @@
+# NeuralRAG Backend - Docker Ignore
+# Exclude files that shouldn't be in the Docker build context
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+
+# Local data (will use volumes)
+data/
+chroma_db/
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Git
+.git/
+.gitignore
+
+# Frontend (separate build)
+rag-frontend/
+
+# Documentation
+*.md
+!requirements.txt
+
+# Docker files (not needed in context)
+docker-compose*.yml
+
+# Logs
+*.log
+
+# Test files
+tests/
+test_*.py
+*_test.py
+
+# CI/CD
+.github/
+.gitlab-ci.yml
