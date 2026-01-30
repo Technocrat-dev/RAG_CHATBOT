@@ -828,4 +828,4 @@ For issues and questions:
 
 ---
 
-**Built with ❤️ for accurate, reliable AI-powered document Q&A**
+**Built for accurate, reliable AI-powered document Q&A**
