@@ -28,7 +28,7 @@ A production-ready Retrieval-Augmented Generation (RAG) system with **self-corre
 - [API Reference](#-api-reference)
 - [Technical Details](#-technical-details)
 - [Development](#-development)
-- [Screenshots](#-screenshots)
+- [Screenshot](#-screenshot)
 
 ---
 
@@ -378,8 +378,6 @@ OLLAMA_HOST=http://localhost:11434
 
 ### Web Interface
 
-*[SCREENSHOT PLACEHOLDER: Main chat interface with sidebar showing collections and sessions]*
-
 **1. Create a Collection** (optional)
    - Click "New Collection" in sidebar
    - Name: "Q4 Financial Reports"
@@ -389,8 +387,6 @@ OLLAMA_HOST=http://localhost:11434
    - Select collection from dropdown
    - Click upload button or drag-and-drop
    - Supported formats: PDF, TXT, MD, DOC, DOCX, PNG, JPG
-
-*[SCREENSHOT PLACEHOLDER: Document upload progress showing handler detection and chunk count]*
 
 **3. Start a Chat Session**
    - Click "New Chat" button
@@ -402,13 +398,9 @@ OLLAMA_HOST=http://localhost:11434
    - Watch real-time processing logs (query rewriting, search, validation)
    - Receive answer with confidence score and sources
 
-*[SCREENSHOT PLACEHOLDER: Chat response showing answer, confidence indicator, and source citations]*
-
 **5. View Processing Logs**
    - Toggle "Show Logs" to see self-correction pipeline
    - See query variations, search results, validation scores
-
-*[SCREENSHOT PLACEHOLDER: Processing logs panel showing self-correction iterations]*
 
 ### API Usage
 
@@ -794,70 +786,10 @@ docker-compose up -d
 
 ---
 
-## 📸 Screenshots
+## 📸 Screenshot
 
-### Main Chat Interface
-*[PLACEHOLDER: Full-width screenshot showing the main chat interface with sidebar, message list, and input area]*
-
-**Key Elements to Capture**:
-- Left sidebar with collections and session list
-- Main chat area with messages
-- Confidence indicators on assistant messages
-- Source citations panel
-- Input area with upload button
-
----
-
-### Document Upload Flow
-*[PLACEHOLDER: Screenshot showing document upload modal with file selection and progress]*
-
-**Key Elements to Capture**:
-- File upload modal
-- Collection selection dropdown
-- Progress indicator during indexing
-- Success message with handler type and chunk count
-
----
-
-### Processing Logs Panel
-*[PLACEHOLDER: Screenshot of expanded processing logs showing self-correction pipeline steps]*
-
-**Key Elements to Capture**:
-- Query rewriting stage (3 variations)
-- Search results count
-- Validation stage with confidence score
-- Iteration count for corrected answers
-
----
-
-### Confidence Indicators
-*[PLACEHOLDER: Close-up of assistant message showing confidence badge and source pills]*
-
-**Key Elements to Capture**:
-- Confidence score badge (color-coded: green >0.8, yellow 0.6-0.8)
-- Source citation pills (clickable)
-- Iteration count indicator
-
----
-
-### Collections Management
-*[PLACEHOLDER: Screenshot of collections view showing multiple collections with document counts]*
-
-**Key Elements to Capture**:
-- Collection cards with names and descriptions
-- Document count badges
-- Create/delete collection buttons
-- Collection selection for new chats
-
----
-
-### Mobile Responsive View
-*[PLACEHOLDER: Mobile screenshot showing responsive design on phone/tablet]*
-
-**Key Elements to Capture**:
-- Collapsed sidebar with hamburger menu
-- Touch-friendly message interface
-- Responsive upload area
+### Main Interface
+*[Add your screenshot here of the main chat interface]*
 
 ---
 
