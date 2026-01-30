@@ -4,6 +4,7 @@
 [![Next.js](https://img.shields.io/badge/Next.js-16.1-black.svg)](https://nextjs.org/)
 [![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 A production-ready Retrieval-Augmented Generation (RAG) system with **self-correcting capabilities**, **multi-modal document processing**, and **hybrid search**. Built for accuracy, scalability, and ease of deployment.
 
