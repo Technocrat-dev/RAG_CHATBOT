@@ -1,39 +1,38 @@
-# 🧠 NeuralRAG - Self-Correcting Multi-Modal RAG System
+# NeuralRAG - Self-Correcting Multi-Modal RAG System
 
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-green.svg)](https://fastapi.tiangolo.com/)
 [![Next.js](https://img.shields.io/badge/Next.js-16.1-black.svg)](https://nextjs.org/)
 [![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 A production-ready Retrieval-Augmented Generation (RAG) system with **self-correcting capabilities**, **multi-modal document processing**, and **hybrid search**. Built for accuracy, scalability, and ease of deployment.
 
-## ✨ Key Features
+## Key Features
 
-- **🔄 Self-Correcting RAG Pipeline** - Iterative validation and refinement of AI responses for maximum accuracy
-- **📚 Multi-Modal Document Processing** - Specialized handlers for legal, financial, technical documents and images
-- **🔍 Hybrid Search Engine** - Combines dense vector search (semantic) with BM25 sparse search (keyword)
-- **🎯 High Accuracy** - Query rewriting, answer validation, and hallucination detection
-- **💬 Streaming Responses** - Real-time answer generation with processing logs
-- **🗂️ Collection Isolation** - Organize documents into separate knowledge bases
-- **📝 Session Management** - Persistent chat history with SQLite backend
-- **🐳 Docker Ready** - One-command deployment with docker-compose
-- **🎨 Modern UI** - Beautiful Next.js frontend with glassmorphism design
+- ** Self-Correcting RAG Pipeline** - Iterative validation and refinement of AI responses for maximum accuracy
+- ** Multi-Modal Document Processing** - Specialized handlers for legal, financial, technical documents and images
+- ** Hybrid Search Engine** - Combines dense vector search (semantic) with BM25 sparse search (keyword)
+- ** High Accuracy** - Query rewriting, answer validation, and hallucination detection
+- ** Streaming Responses** - Real-time answer generation with processing logs
+- ** Collection Isolation** - Organize documents into separate knowledge bases
+- ** Session Management** - Persistent chat history with SQLite backend
+- ** Docker Ready** - One-command deployment with docker-compose
+- ** Modern UI** - Beautiful Next.js frontend with glassmorphism design
 
-## 📋 Table of Contents
+## Table of Contents
 
 - [Architecture](#-architecture)
 - [Features in Detail](#-features-in-detail)
-- [Screenshot](#-screenshot)
 - [Installation](#-installation)
 - [Usage](#-usage)
 - [API Reference](#-api-reference)
 - [Technical Details](#-technical-details)
 - [Development](#-development)
+- [Screenshot](#-screenshot)
 
 ---
 
-## 🏗 Architecture
+## Architecture
 
 ### System Overview
 
@@ -220,7 +219,7 @@ graph TB
 
 ---
 
-## 🎯 Features in Detail
+## Features in Detail
 
 ### 1. Self-Correcting Pipeline
 
@@ -238,7 +237,7 @@ User: "What's the revenue?"
 → Query Rewriter: ["What is the revenue?", "Show revenue figures", "Revenue performance"]
 → Hybrid Search: Retrieve 10 chunks from all 3 queries
 → Generate Answer: "$5.2M in Q4"
-→ Validator: confidence=0.85 ✓
+→ Validator: confidence=0.85 
 → Return: High-confidence answer
 ```
 
@@ -281,15 +280,7 @@ User: "What's the revenue?"
 
 ---
 
-## 📸 Screenshot
-
-### Main Interface
-
-<img width="2047" height="1092" alt="image" src="https://github.com/user-attachments/assets/9abd9182-7cf7-40c6-9fe4-5ccda0e097d3" />
-
----
-
-## 🚀 Installation
+## Installation
 
 ### Prerequisites
 
@@ -383,7 +374,7 @@ OLLAMA_HOST=http://localhost:11434
 
 ---
 
-## 📖 Usage
+## Usage
 
 ### Web Interface
 
@@ -478,7 +469,7 @@ curl -X POST "http://localhost:8000/chat/stream" \
 
 ---
 
-## 📚 API Reference
+## API Reference
 
 ### Document Management
 
@@ -527,7 +518,7 @@ curl -X POST "http://localhost:8000/chat/stream" \
 
 ---
 
-## 🔧 Technical Details
+## Technical Details
 
 ### Project Structure
 
@@ -690,7 +681,7 @@ OLLAMA_HOST=http://ollama:11434  # Container name
 
 ---
 
-## 💻 Development
+## Development
 
 ### Running Tests
 
@@ -795,7 +786,14 @@ docker-compose up -d
 
 ---
 
-## 🤝 Contributing
+## Screenshot
+
+### Main Interface
+*[Add your screenshot here of the main chat interface]*
+
+---
+
+## Contributing
 
 Contributions welcome! Please:
 1. Fork the repository
@@ -806,37 +804,13 @@ Contributions welcome! Please:
 
 ---
 
-## 📄 License
+## License
 
-This project is licensed under the **MIT License**.
-
-```
-MIT License
-
-Copyright (c) 2024
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
+[Add your license here]
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - **Ollama** for local LLM hosting
 - **ChromaDB** for vector database
@@ -845,7 +819,7 @@ SOFTWARE.
 
 ---
 
-## 📞 Support
+## Support
 
 For issues and questions:
 - Open an issue on GitHub
@@ -854,4 +828,4 @@ For issues and questions:
 
 ---
 
-**Built for accurate, reliable AI-powered document Q&A**
+**Built with  for accurate, reliable AI-powered document Q&A**
