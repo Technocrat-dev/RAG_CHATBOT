@@ -21,14 +21,14 @@ A production-ready Retrieval-Augmented Generation (RAG) system with **self-corre
 
 ## Table of Contents
 
-- [Architecture](#-architecture)
-- [Features in Detail](#-features-in-detail)
-- [Installation](#-installation)
-- [Usage](#-usage)
-- [API Reference](#-api-reference)
-- [Technical Details](#-technical-details)
-- [Development](#-development)
-- [Screenshot](#-screenshot)
+- [Architecture](#architecture)
+- [Features in Detail](#features-in-detail)
+- [Installation](#installation)
+- [Usage](#usage)
+- [API Reference](#api-reference)
+- [Technical Details](#technical-details)
+- [Development](#development)
+- [Screenshot](#screenshot)
 
 ---
 
